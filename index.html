@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sistema de Controle - Unidades e Municípios</title>
+<style>
+    /* --- layout / estilo --- */
+    :root{--primary:#3498db;--bg:#f5f7fb;--muted:#666;--success:#27ae60;--warning:#f39c12;--danger:#e74c3c;}
+    *{box-sizing:border-box}
+    body{font-family:Inter,Arial,Helvetica,sans-serif;margin:0;background:var(--bg);color:#222;line-height:1.6}
+    .container{max-width:1200px;margin:18px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.08)}
+    .header{padding:24px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;text-align:center}
+    .header h1{margin:0;font-size:24px;font-weight:700}
+    .header .subtitle{margin-top:8px;opacity:0.9;font-size:14px}
+    .tabs{display:flex;background:#2c3e50;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+    .tab{flex:1;padding:16px 20px;background:#34495e;color:#fff;border:none;cursor:pointer;text-align:center;font-weight:600;font-size:16px;transition:all 0.3s ease}
+    .tab:hover{background:#445568}
+    .tab.active{background:var(--primary);box-shadow:inset 0 2px 4px rgba(0,0,0,.1)}
+    .content{padding:24px}
+    .controls{background:#f8fafc;padding:20px;border-radius:10px;margin-bottom:20px;border:1px solid #e2e8f0}
+    .control-section{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #edf2f7}
+    .control-section:last-child{border-bottom:none;margin-bottom:0}
+    .control-section h4{margin:0 0 12px 0;color:#2d3748;font-weight:600}
+    .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+    .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+    textarea, input[type="text"], select{width:100%;padding:12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;transition:border-color 0.3s ease}
+    textarea{height:150px;resize:vertical;font-family:inherit}
+    textarea:focus, input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(52,152,219,0.1)}
+    button{padding:12px 20px;border-radius:8px;border:none;cursor:pointer;background:var(--success);color:#fff;font-weight:600;font-size:14px;transition:all 0.3s ease}
+    button:hover{transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,.15)}
+    button.ghost{background:var(--primary)}
+    button.danger{background:var(--danger)}
+    .format-options{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .format-btn{padding:8px 16px;border:2px solid var(--primary);border-radius:6px;background:#fff;color:var(--primary);cursor:pointer;font-size:13px;transition:all 0.3s ease}
+    .format-btn:hover{background:#f0f8ff}
+    .format-btn.active{background:var(--primary);color:#fff}
+    table{width:100%;border-collapse:collapse;margin-top:16px;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    th,td{padding:12px;border:1px solid #e6eef8;text-align:left;font-size:14px}
+    th{background:var(--primary);color:#fff;position:sticky;top:0;font-weight:600}
+    tr:nth-child(even){background:#fbfdff}
+    tr.status-montado td { background-color: #e9f8ee; }
+    tr.status-falta td { background-color: #fff0f0; }
+    tr.status-duplicada td { background-color: #fff7e6; }
+    tr:hover td{background:#eef8ff}
+    .status-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+    .status-item{padding:16px;border-radius:10px;text-align:center;font-weight:700;transition:transform 0.3s ease}
+    .status-item:hover{transform:translateY(-2px)}
+    .status-total{background:linear-gradient(135deg,#eaf2ff,#d6e7ff);color:#155d9a;border:1px solid #b3d9ff}
+    .status-montadas{background:linear-gradient(135deg,#e9f8ee,#d4eedd);color:#166b2f;border:1px solid #9fd4a8}
+    .status-faltam{background:linear-gradient(135deg,#fff0f0,#ffe6e6);color:#a82828;border:1px solid #ffb3b3}
+    .status-duplicadas{background:linear-gradient(135deg,#fff7e6,#ffeecc);color:#a85e00;border:1px solid #ffd699}
+    .resultado-texto{background:#fff;border:2px solid #e6eef8;padding:12px;height:150px;overflow:auto;white-space:pre-wrap;font-family:monospace;font-size:13px;border-radius:6px}
+    .export-section{margin-top:20px;padding:20px;background:#fbfdff;border-radius:10px;border:2px solid #eaf2ff}
+    .small{font-size:13px;color:var(--muted)}
+    .inline{display:inline-flex;gap:8px;align-items:center}
+    .checkboxes{display:flex;gap:12px;flex-wrap:wrap}
+    .footer-note{padding:16px;text-align:center;color:#666;background:#f8fafc;border-top:2px solid #e2e8f0;font-size:13px}
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .container {
+            margin: 10px;
+            border-radius: 8px;
+        }
+        .content {
+            padding: 16px;
+        }
+        .tab {
+            padding: 12px;
+            font-size: 14px;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎯 Sistema de Controle - Unidades e Municípios do Amazonas</h1>
+        <div class="subtitle">Colar listas, processar, ver status e exportar (TXT / CSV / DOC / PDF)</div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" id="tab-unidades">🏢 UNIDADES</button>
+        <button class="tab" id="tab-municipios">🌍 MUNICÍPIOS</button>
+    </div>
+
+    <div class="content" id="content-unidades">
+        <div class="controls">
+            <div class="control-section">
+                <h4>📊 Estatísticas das Unidades</h4>
+                <div class="status-info">
+                    <div class="status-item status-total">
+                        Total
+                        <div id="totalUnidades" style="font-size:20px;margin-top:8px">0</div>
+                    </div>
+                    <div class="status-item status-montadas">
+                        Montadas
+                        <div id="totalMontadas" style="font-size:20px;margin-top:8px">0</div>
+                    </div>
+                    <div class="status-item status-faltam">
+                        Faltam
+                        <div id="totalFaltam" style="font-size:20px;margin-top:8px">0</div>
+                    </div>
+                    <div class="status-item status-duplicadas">
+                        Duplicadas
+                        <div id="totalDuplicadas" style="font-size:20px;margin-top:8px">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h4>➕ Adicionar Nova Unidade</h4>
+                <div style="display:flex;gap:12px;align-items:flex-end">
+                    <div style="flex:1">
+                        <input id="novaUnidade" placeholder="Digite nome da unidade..." />
+                    </div>
+                    <button onclick="adicionarUnidade()">Adicionar</button>
+                    <button class="ghost" onclick="ordenarAlfabeticamente('unidades')">📝 A-Z</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h4>📋 Cole as unidades que montaram</h4>
+                <textarea id="unidadesMontadas" placeholder="Cole aqui (aceita linhas, vírgulas e ; )"></textarea>
+                <div style="margin-top:12px;display:flex;gap:12px">
+                    <button onclick="processarUnidades()">🔄 Processar</button>
+                    <button class="danger" onclick="limparDados('unidades')">🗑️ Limpar</button>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <h4>💾 Salvar/Carregar Estado</h4>
+                <div style="display:flex;gap:12px;flex-wrap:wrap">
+                    <button class="ghost" onclick="salvarEstado('unidades')">Salvar Estado Atual</button>
+                    <button class="ghost" onclick="document.getElementById('file-upload-unidades').click()">Carregar Estado Salvo</button>
+                    <input type="file" id="file-upload-unidades" style="display:none;" onchange="carregarEstado('unidades')">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h4>⚙️ Opções de comparação / export</h4>
+                <div class="small" style="margin-bottom:8px">Delimitador de entrada:</div>
+                <div class="format-options">
+                    <button class="format-btn active" id="inputDetectUn" onclick="setInputMode('unidades','auto', this)">Auto</button>
+                    <button class="format-btn" onclick="setInputMode('unidades','newline', this)">Linha</button>
+                    <button class="format-btn" onclick="setInputMode('unidades','comma', this)">Vírgula</button>
+                    <button class="format-btn" onclick="setInputMode('unidades','semicolon', this)">;</button>
+                </div>
+
+                <div class="small" style="margin-bottom:8px">Caixa de texto:</div>
+                <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+                    <label class="inline"><input type="radio" name="caseUn" value="original" checked /> Como digitado</label>
+                    <label class="inline"><input type="radio" name="caseUn" value="title" /> Primeira Maiúscula</label>
+                    <label class="inline"><input type="radio" name="caseUn" value="upper" /> MAIÚSCULO</label>
+                    <label class="inline"><input type="radio" name="caseUn" value="lower" /> minúsculo</label>
+                </div>
+
+                <div class="small" style="margin-bottom:8px">Layout de exportação:</div>
+                <div style="display:flex;gap:12px;margin-bottom:12px">
+                    <label class="inline"><input type="radio" name="layoutUn" value="lado" checked /> Lado a lado (CSV)</label>
+                    <label class="inline"><input type="radio" name="layoutUn" value="sequencial" /> Um abaixo do outro</label>
+                </div>
+            </div>
+        </div>
+
+        <table id="tabelaUnidades">
+            <thead>
+                <tr>
+                    <th style="width:40%">Unidades Base</th>
+                    <th style="width:20%">Status</th>
+                    <th style="width:20%">Faltam Montar</th>
+                    <th style="width:20%">Duplicadas</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="export-section">
+            <h4>📤 Resultados para Exportação</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">
+                <div>
+                    <strong>✅ Montadas</strong>
+                    <div id="resultadoMontadasUnidades" class="resultado-texto"></div>
+                </div>
+                <div>
+                    <strong>❌ Faltam</strong>
+                    <div id="resultadoFaltamUnidades" class="resultado-texto"></div>
+                </div>
+                <div>
+                    <strong>⚠️ Duplicadas</strong>
+                    <div id="resultadoDuplicadasUnidades" class="resultado-texto"></div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:12px;align-items:center;margin-top:16px;flex-wrap:wrap">
+                <div class="small">Separador:</div>
+                <div class="format-options">
+                    <button class="format-btn active" id="expVirgUn" onclick="setExportSeparator('unidades','virgula', this)">Vírgula</button>
+                    <button class="format-btn" onclick="setExportSeparator('unidades','linha', this)">Linha</button>
+                </div>
+
+                <div style="margin-left:auto" class="small">Gerar:</div>
+                <div class="checkboxes">
+                    <label class="inline"><input type="checkbox" id="chkTxtUn" checked /> TXT</label>
+                    <label class="inline"><input type="checkbox" id="chkCsvUn" checked /> CSV</label>
+                    <label class="inline"><input type="checkbox" id="chkDocUn" checked /> DOC</label>
+                    <label class="inline"><input type="checkbox" id="chkPdfUn" /> PDF</label>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+                <button onclick="baixarExport('unidades')">📥 Baixar selecionados</button>
+                <button class="ghost" onclick="copiarResultados('unidades')">📋 Copiar texto</button>
+            </div>
+
+            <div style="margin-top:16px">
+                <strong class="small">Entradas não reconhecidas:</strong>
+                <div id="unidadesNaoReconhecidas" class="resultado-texto" style="height:80px"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content" id="content-municipios" style="display:none">
+        <div class="controls">
+            <div class="control-section">
+                <h4>📊 Estatísticas dos Municípios</h4>
+                <div class="status-info">
+                    <div class="status-item status-total">
+                        Total
+                        <div id="totalMunicipios" style="font-size:20px;margin-top:8px">0</div>
+                    </div>
+                    <div class="status-item status-montadas">
+                        Informaram
+                        <div id="totalInformaram" style="font-size:20px;margin-top:8px">0</div>
+                    </div>
+                    <div class="status-item status-faltam">
+                        Não Informaram
+                        <div id="totalNaoInformaram" style="font-size:20px;margin-top:8px">0</div>
+                    </div>
+                    <div class="status-item status-duplicadas">
+                        Duplicados
+                        <div id="totalDuplicadosMun" style="font-size:20px;margin-top:8px">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h4>📋 Cole os municípios que informaram produtividade</h4>
+                <textarea id="municipiosInformaram" placeholder="Cole aqui (aceita linhas, vírgulas e ; )"></textarea>
+                <div style="margin-top:12px;display:flex;gap:12px">
+                    <button onclick="processarMunicipios()">🔄 Processar</button>
+                    <button class="danger" onclick="limparDados('municipios')">🗑️ Limpar</button>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <h4>💾 Salvar/Carregar Estado</h4>
+                <div style="display:flex;gap:12px;flex-wrap:wrap">
+                    <button class="ghost" onclick="salvarEstado('municipios')">Salvar Estado Atual</button>
+                    <button class="ghost" onclick="document.getElementById('file-upload-municipios').click()">Carregar Estado Salvo</button>
+                    <input type="file" id="file-upload-municipios" style="display:none;" onchange="carregarEstado('municipios')">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h4>⚙️ Opções de comparação / export</h4>
+                <div class="small" style="margin-bottom:8px">Delimitador de entrada:</div>
+                <div class="format-options">
+                    <button class="format-btn active" id="inputDetectMun" onclick="setInputMode('municipios','auto', this)">Auto</button>
+                    <button class="format-btn" onclick="setInputMode('municipios','newline', this)">Linha</button>
+                    <button class="format-btn" onclick="setInputMode('municipios','comma', this)">Vírgula</button>
+                    <button class="format-btn" onclick="setInputMode('municipios','semicolon', this)">;</button>
+                </div>
+
+                <div class="small" style="margin-bottom:8px">Caixa de texto:</div>
+                <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+                    <label class="inline"><input type="radio" name="caseMun" value="original" checked /> Como digitado</label>
+                    <label class="inline"><input type="radio" name="caseMun" value="title" /> Primeira Maiúscula</label>
+                    <label class="inline"><input type="radio" name="caseMun" value="upper" /> MAIÚSCULO</label>
+                    <label class="inline"><input type="radio" name="caseMun" value="lower" /> minúsculo</label>
+                </div>
+
+                <div class="small" style="margin-bottom:8px">Layout de exportação:</div>
+                <div style="display:flex;gap:12px;margin-bottom:12px">
+                    <label class="inline"><input type="radio" name="layoutMun" value="lado" checked /> Lado a lado</label>
+                    <label class="inline"><input type="radio" name="layoutMun" value="sequencial" /> Um abaixo do outro</label>
+                </div>
+            </div>
+        </div>
+
+        <table id="tabelaMunicipios">
+            <thead>
+                <tr>
+                    <th>Municípios do Amazonas</th>
+                    <th>Informaram Produtividade</th>
+                    <th>Não Informaram</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="export-section">
+            <h4>📤 Resultados para Exportação</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px">
+                <div>
+                    <strong>✅ Informaram</strong>
+                    <div id="resultadoInformaramMun" class="resultado-texto"></div>
+                </div>
+                <div>
+                    <strong>❌ Não Informaram</strong>
+                    <div id="resultadoNaoInformaramMun" class="resultado-texto"></div>
+                </div>
+                <div>
+                    <strong>⚠️ Duplicados</strong>
+                    <div id="resultadoDuplicadosMun" class="resultado-texto"></div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+                <button onclick="baixarExport('municipios')">📥 Baixar selecionados</button>
+                <button class="ghost" onclick="copiarResultados('municipios')">📋 Copiar texto</button>
+                <div style="margin-left:auto" class="small">Gerar:</div>
+                <div class="checkboxes">
+                    <label class="inline"><input type="checkbox" id="chkTxtMun" checked /> TXT</label>
+                    <label class="inline"><input type="checkbox" id="chkDocMun" checked /> DOC</label>
+                    <label class="inline"><input type="checkbox" id="chkPdfMun" /> PDF</label>
+                </div>
+            </div>
+
+            <div style="margin-top:16px">
+                <strong class="small">Entradas não reconhecidas:</strong>
+                <div id="municipiosNaoReconhecidos" class="resultado-texto" style="height:80px"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        💡 Dica: ao gerar PDF o navegador abrirá a caixa de impressão (lá você pode salvar em PDF).
+    </div>
+</div>
+
+<script>
+    /* ===================== DADOS BASE ===================== */
+    let unidadesBase = [
+        'CPA NORTE', '6 CICOM', '13 CICOM', '15 CICOM', '18 CICOM', '26 CICOM', '27 CICOM',
+        'CPA SUL', '1 CICOM', '2 CICOM', '3 CICOM', '7 CICOM', '24 CICOM',
+        'CPA LESTE', '4 CICOM', '9 CICOM', '11 CICOM', '14 CICOM', '25 CICOM', '28 CICOM', '29 CICOM', '30 CICOM',
+        'CPA OESTE', '5 CICOM', '8 CICOM', '19 CICOM', '20 CICOM', '21 CICOM',
+        'CPA C. SUL/C. OESTE', '10 CICOM', '12 CICOM', '16 CICOM', '17 CICOM', '22 CICOM', '23 CICOM',
+        'FT', 'BPTRAN', 'CPTUR', 'RMP', 'CICLO', 'ROCAM', 'CHOQUE', 'MARTE', 'RPMON', 'CIPCÃES', 'COE', 'BPAMB', 'CECOPOM', 'GRAER', 'BPG', 'NPPM'
+    ];
+
+    const municipiosAmazonas = [
+        'Alvarães', 'Amaturá', 'Anamã', 'Anori', 'Apuí', 'Atalaia do Norte', 'Autazes', 'Barcelos',
+        'Barreirinha', 'Benjamin Constant', 'Beruri', 'Boa Vista do Ramos', 'Boca do Acre', 'Borba',
+        'Caapiranga', 'Canutama', 'Carauari', 'Careiro', 'Careiro da Várzea', 'Coari', 'Codajás',
+        'Eirunepé', 'Envira', 'Fonte Boa', 'Guajará', 'Humaitá', 'Ipixuna', 'Iranduba', 'Itacoatiara',
+        'Itamarati', 'Itapiranga', 'Japurá', 'Juruá', 'Jutaí', 'Lábrea', 'Manacapuru', 'Manaquiri',
+        'Manaus', 'Manicoré', 'Maraã', 'Maués', 'Nhamundá', 'Nova Olinda do Norte', 'Novo Airão',
+        'Novo Aripuanã', 'Parintins', 'Pauini', 'Presidente Figueiredo', 'Rio Preto da Eva', 'Santa Isabel do Rio Negro',
+        'Santo Antônio do Içá', 'São Gabriel da Cachoeira', 'São Paulo de Olivença', 'São Sebastião do Uatumã',
+        'Silves', 'Tabatinga', 'Tapauá', 'Tefé', 'Tonantins', 'Uarini', 'Urucará', 'Urucurituba'
+    ];
+
+    /* ===================== ESTADO / CONFIG ===================== */
+    let inputMode = {unidades:'auto', municipios:'auto'};
+    let exportSeparator = {unidades:'virgula', municipios:'virgula'};
+    let estadoAtual = {
+        unidades: {
+            unidadesMontadas: [],
+            naoReconhecidas: [],
+        },
+        municipios: {
+            municipiosInformaram: [],
+            naoReconhecidas: [],
+        }
+    };
+
+    /* ===================== UTILIDADES ===================== */
+    function safeNormalize(s){
+        if(!s && s !== '') return '';
+        try {
+            let t = String(s).normalize('NFD').replace(/\p{Diacritic}/gu,'');
+            t = t.replace(/[ºª]/g,' ').replace(/[^\p{L}\p{N}\s]/gu,' ');
+            t = t.replace(/\s+/g,' ').trim().toLowerCase();
+            return t;
+        } catch(e){
+            let t = String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+            t = t.replace(/[ºª]/g,' ').replace(/[^0-9a-zA-Z\s]/g,' ');
+            t = t.replace(/\s+/g,' ').trim().toLowerCase();
+            return t;
+        }
+    }
+
+    function splitInputText(raw, mode){
+        if(!raw) return [];
+        let parts=[];
+        if(mode === 'auto'){
+            parts = raw.split(/[\r\n,;]+/);
+        } else if(mode === 'newline'){
+            parts = raw.split(/[\r\n]+/);
+        } else if(mode === 'comma'){
+            parts = raw.split(/[,]+/);
+        } else if(mode === 'semicolon'){
+            parts = raw.split(/[;]+/);
+        } else {
+            parts = raw.split(/[\r\n,;]+/);
+        }
+        return parts.map(p=>p.trim()).filter(p=>p.length>0);
+    }
+
+    function toTitleCase(str){
+        return String(str).toLowerCase().split(' ').map(w=>{
+            return w.length>0 ? (w[0].toUpperCase() + w.slice(1)) : '';
+        }).join(' ');
+    }
+
+    function applyCase(s, mode){
+        if(mode === 'original') return s;
+        if(mode === 'title') return toTitleCase(s);
+        if(mode === 'upper') return String(s).toUpperCase();
+        if(mode === 'lower') return String(s).toLowerCase();
+        return s;
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: sans-serif;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '1';
+        }, 100);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
+
+    /* ===================== PERSISTÊNCIA DE DADOS ===================== */
+    function saveUnidadesToLocalStorage() {
+        try {
+            const data = JSON.stringify(unidadesBase);
+            if (data) {
+                sessionStorage.setItem('unidadesCustomizadas', data);
+            }
+        } catch (e) {
+            console.error("Erro ao salvar unidades:", e);
+        }
+    }
+
+    function loadUnidadesFromLocalStorage() {
+        try {
+            const custom = sessionStorage.getItem('unidadesCustomizadas');
+            if (custom) {
+                const parsed = JSON.parse(custom);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    unidadesBase = parsed;
+                }
+            }
+        } catch (e) {
+            console.error("Erro ao carregar unidades:", e);
+            sessionStorage.removeItem('unidadesCustomizadas');
+        }
+    }
+
+    function salvarEstado(tipo) {
+        const data = {
+            unidadesBase: unidadesBase,
+            municipiosAmazonas: municipiosAmazonas,
+            entradasMontadas: document.getElementById(`${tipo === 'unidades' ? 'unidadesMontadas' : 'municipiosInformaram'}`).value
+        };
+        const content = JSON.stringify(data, null, 2);
+        downloadFile(content, `estado_${tipo}_${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+        showToast('Estado salvo com sucesso!');
+    }
+
+    function carregarEstado(tipo) {
+        const fileInput = document.getElementById(`file-upload-${tipo}`);
+        const file = fileInput.files[0];
+        if (!file) {
+            showToast('Nenhum arquivo selecionado.');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (tipo === 'unidades' && data.unidadesBase) {
+                    unidadesBase = data.unidadesBase;
+                    document.getElementById('unidadesMontadas').value = data.entradasMontadas;
+                    saveUnidadesToLocalStorage();
+                    inicializarTabela('Unidades', unidadesBase);
+                    processarUnidades();
+                } else if (tipo === 'municipios' && data.municipiosAmazonas) {
+                    document.getElementById('municipiosInformaram').value = data.entradasMontadas;
+                    processarMunicipios();
+                }
+                showToast('Estado carregado com sucesso!');
+            } catch (error) {
+                showToast('Erro ao carregar o arquivo. Formato inválido.');
+                console.error(error);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    /* ===================== RENDER TABELAS INICIAIS ===================== */
+    function inicializarTabela(tipo, listaBase){
+        const tbody = document.querySelector(`#tabela${tipo} tbody`);
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        listaBase.forEach(item=>{
+            const tr = document.createElement('tr');
+            if(tipo === 'Unidades'){
+                tr.innerHTML = `<td><strong>${item}</strong></td><td></td><td></td><td></td>`;
+            } else {
+                tr.innerHTML = `<td><strong>${item}</strong></td><td></td><td></td>`;
+            }
+            tbody.appendChild(tr);
+        });
+    }
+
+    /* ===================== COMPLEMENTOS UI ===================== */
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('tab-unidades')?.addEventListener('click', ()=>{ toggleTab('unidades') });
+        document.getElementById('tab-municipios')?.addEventListener('click', ()=>{ toggleTab('municipios') });
+    });
+
+    function toggleTab(name){
+        const u = document.getElementById('content-unidades');
+        const m = document.getElementById('content-municipios');
+        const tabU = document.getElementById('tab-unidades');
+        const tabM = document.getElementById('tab-municipios');
+        
+        if (!u || !m || !tabU || !tabM) return;
+        
+        tabU.classList.remove('active');
+        tabM.classList.remove('active');
+        
+        if(name === 'unidades'){
+            u.style.display = '';
+            m.style.display = 'none';
+            tabU.classList.add('active');
+        } else {
+            u.style.display = 'none';
+            m.style.display = '';
+            tabM.classList.add('active');
+        }
+    }
+
+    function atualizarTabelasEstatus(resultados, tipo) {
+        const tabelaBody = document.querySelector(`#tabela${tipo} tbody`);
+        if (!tabelaBody) return;
+        
+        tabelaBody.innerHTML = '';
+
+        const listaBase = (tipo === 'Unidades') ? unidadesBase : municipiosAmazonas;
+
+        listaBase.forEach(item => {
+            const normalizedItem = safeNormalize(item);
+            let status = 'Não Montada';
+            let statusClass = 'status-falta';
+
+            if (resultados.montadas.some(m => safeNormalize(m.original) === normalizedItem)) {
+                status = 'Montada';
+                statusClass = 'status-montado';
+            } else if (resultados.duplicadas.some(d => safeNormalize(d.original) === normalizedItem)) {
+                 status = 'Duplicada';
+                 statusClass = 'status-duplicada';
+            }
+
+            const tr = document.createElement('tr');
+            tr.classList.add(statusClass);
+            
+            if(tipo === 'Unidades') {
+                 const faltamCount = resultados.faltam.filter(f => safeNormalize(f.original) === normalizedItem).length;
+                 const duplicadasCount = resultados.duplicadas.filter(d => safeNormalize(d.original) === normalizedItem).length;
+                 tr.innerHTML = `
+                    <td><strong>${item}</strong></td>
+                    <td>${status}</td>
+                    <td>${faltamCount > 0 ? 'Falta' : ''}</td>
+                    <td>${duplicadasCount > 0 ? `Duplicada (${duplicadasCount})` : ''}</td>
+                `;
+            } else {
+                const faltamCount = resultados.faltam.filter(f => safeNormalize(f.original) === normalizedItem).length;
+                const duplicadasCount = resultados.duplicadas.filter(d => safeNormalize(d.original) === normalizedItem).length;
+                 tr.innerHTML = `
+                    <td><strong>${item}</strong></td>
+                    <td>${status}</td>
+                    <td>${faltamCount > 0 ? 'Falta' : ''}</td>
+                `;
+            }
+            tabelaBody.appendChild(tr);
+        });
+
+        if (resultados.naoReconhecidas.length > 0) {
+            resultados.naoReconhecidas.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.original}</td>
+                    <td colspan="${tipo === 'Unidades' ? 3 : 2}" style="color:var(--danger)">⚠️ Não reconhecido</td>
+                `;
+                tabelaBody.appendChild(tr);
+            });
+        }
+    }
+
+    function processarUnidades() {
+        const rawInput = document.getElementById('unidadesMontadas').value;
+        const mode = inputMode.unidades;
+        const entrada = splitInputText(rawInput, mode);
+        
+        if (entrada.length === 0) {
+            showToast('Nenhuma unidade para processar.');
+            return;
+        }
+
+        const resultados = {
+            montadas: [],
+            faltam: [],
+            duplicadas: [],
+            naoReconhecidas: []
+        };
+
+        const montadasNormalizadas = new Set();
+        
+        entrada.forEach(unidade => {
+            const normalizedInput = safeNormalize(unidade);
+            const found = unidadesBase.find(base => safeNormalize(base) === normalizedInput);
+            
+            if (found) {
+                if (montadasNormalizadas.has(safeNormalize(found))) {
+                    resultados.duplicadas.push({ original: unidade });
+                } else {
+                    resultados.montadas.push({ original: found });
+                    montadasNormalizadas.add(safeNormalize(found));
+                }
+            } else {
+                resultados.naoReconhecidas.push({ original: unidade });
+            }
+        });
+        
+        unidadesBase.forEach(unidade => {
+            if (!montadasNormalizadas.has(safeNormalize(unidade))) {
+                resultados.faltam.push({ original: unidade });
+            }
+        });
+
+        atualizarUI('unidades', resultados);
+    }
+
+    function processarMunicipios() {
+        const rawInput = document.getElementById('municipiosInformaram').value;
+        const mode = inputMode.municipios;
+        const entrada = splitInputText(rawInput, mode);
+        
+        if (entrada.length === 0) {
+            showToast('Nenhum município para processar.');
+            return;
+        }
+
+        const resultados = {
+            montadas: [],
+            faltam: [],
+            duplicadas: [],
+            naoReconhecidas: []
+        };
+
+        const informaramNormalizados = new Set();
+        
+        entrada.forEach(municipio => {
+            const normalizedInput = safeNormalize(municipio);
+            const found = municipiosAmazonas.find(base => safeNormalize(base) === normalizedInput);
+            
+            if (found) {
+                if (informaramNormalizados.has(safeNormalize(found))) {
+                    resultados.duplicadas.push({ original: municipio });
+                } else {
+                    resultados.montadas.push({ original: found });
+                    informaramNormalizados.add(safeNormalize(found));
+                }
+            } else {
+                resultados.naoReconhecidas.push({ original: municipio });
+            }
+        });
+        
+        municipiosAmazonas.forEach(municipio => {
+            if (!informaramNormalizados.has(safeNormalize(municipio))) {
+                resultados.faltam.push({ original: municipio });
+            }
+        });
+
+        atualizarUI('municipios', resultados);
+    }
+
+    function atualizarUI(tipo, resultados){
+        const totalElement = document.getElementById(`total${tipo === 'unidades' ? 'Unidades' : 'Municipios'}`);
+        const montadasElement = document.getElementById(`total${tipo === 'unidades' ? 'Montadas' : 'Informaram'}`);
+        const faltamElement = document.getElementById(`total${tipo === 'unidades' ? 'Faltam' : 'NaoInformaram'}`);
+        const duplicadasElement = document.getElementById(`total${tipo === 'unidades' ? 'Duplicadas' : 'DuplicadosMun'}`);
+
+        const totalBase = (tipo === 'unidades') ? unidadesBase.length : municipiosAmazonas.length;
+
+        totalElement.textContent = totalBase;
+        montadasElement.textContent = resultados.montadas.length;
+        faltamElement.textContent = resultados.faltam.length;
+        duplicadasElement.textContent = resultados.duplicadas.length;
+
+        const exportMontadas = document.getElementById(`resultado${tipo === 'unidades' ? 'MontadasUnidades' : 'InformaramMun'}`);
+        const exportFaltam = document.getElementById(`resultado${tipo === 'unidades' ? 'FaltamUnidades' : 'NaoInformaramMun'}`);
+        const exportDuplicadas = document.getElementById(`resultado${tipo === 'unidades' ? 'DuplicadasUnidades' : 'DuplicadosMun'}`);
+        const exportNaoReconhecidas = document.getElementById(`${tipo === 'unidades' ? 'unidadesNaoReconhecidas' : 'municipiosNaoReconhecidos'}`);
+
+        const caseMode = document.querySelector(`input[name="case${tipo === 'unidades' ? 'Un' : 'Mun'}"]:checked`)?.value || 'original';
+        const layoutMode = document.querySelector(`input[name="layout${tipo === 'unidades' ? 'Un' : 'Mun'}"]:checked`)?.value || 'sequencial';
+
+        function formatOutput(items) {
+            if (layoutMode === 'lado') {
+                const separator = (exportSeparator[tipo] === 'virgula') ? ', ' : '\n';
+                return items.map(item => applyCase(item.original, caseMode)).join(separator);
+            } else {
+                return items.map(item => applyCase(item.original, caseMode)).join('\n');
+            }
+        }
+
+        exportMontadas.textContent = formatOutput(resultados.montadas);
+        exportFaltam.textContent = formatOutput(resultados.faltam);
+        exportDuplicadas.textContent = formatOutput(resultados.duplicadas);
+        exportNaoReconhecidas.textContent = formatOutput(resultados.naoReconhecidas);
+
+        atualizarTabelasEstatus(resultados, tipo === 'unidades' ? 'Unidades' : 'Municipios');
+
+        showToast('Processamento concluído com sucesso! ✅');
+    }
+
+    function adicionarUnidade() {
+        const input = document.getElementById('novaUnidade');
+        const nome = input.value.trim();
+        if (nome === '') {
+            showToast('Digite um nome para a unidade.');
+            return;
+        }
+        
+        const normalizedNome = safeNormalize(nome);
+        const existing = unidadesBase.find(u => safeNormalize(u) === normalizedNome);
+        if (existing) {
+            showToast(`"${nome}" já existe na lista base.`);
+            return;
+        }
+
+        unidadesBase.push(toTitleCase(nome));
+        input.value = '';
+        saveUnidadesToLocalStorage();
+        inicializarTabela('Unidades', unidadesBase);
+        showToast(`"${toTitleCase(nome)}" adicionada!`);
+        atualizarUI('unidades', { montadas: [], faltam: unidadesBase.map(u => ({ original: u })), duplicadas: [], naoReconhecidas: [] });
+    }
+
+    function ordenarAlfabeticamente(tipo) {
+        if (tipo === 'unidades') {
+            unidadesBase.sort((a, b) => a.localeCompare(b));
+            saveUnidadesToLocalStorage();
+            inicializarTabela('Unidades', unidadesBase);
+            showToast('Lista de Unidades ordenada de A-Z.');
+        } else {
+            showToast('Apenas a lista de Unidades pode ser ordenada.');
+        }
+    }
+
+    function limparDados(tipo) {
+        const confirmed = confirm('Tem certeza que deseja limpar todos os dados de entrada e resultados? Esta ação não pode ser desfeita.');
+        if (!confirmed) {
+            return;
+        }
+        if (tipo === 'unidades') {
+            document.getElementById('unidadesMontadas').value = '';
+            atualizarUI('unidades', { montadas: [], faltam: unidadesBase.map(u => ({ original: u })), duplicadas: [], naoReconhecidas: [] });
+        } else {
+            document.getElementById('municipiosInformaram').value = '';
+            atualizarUI('municipios', { montadas: [], faltam: municipiosAmazonas.map(m => ({ original: m })), duplicadas: [], naoReconhecidas: [] });
+        }
+        showToast('Dados de entrada e resultados limpos.');
+    }
+
+    function setInputMode(tipo, mode, button) {
+        const buttons = document.querySelectorAll(`#content-${tipo} .format-options .format-btn`);
+        buttons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        inputMode[tipo] = mode;
+    }
+
+    function setExportSeparator(tipo, mode, button) {
+        const buttons = document.querySelectorAll(`#content-${tipo} .export-section .format-options .format-btn`);
+        buttons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        exportSeparator[tipo] = mode;
+    }
+
+    function copiarResultados(tipo) {
+        const results = [
+            document.getElementById(`resultado${tipo === 'unidades' ? 'MontadasUnidades' : 'InformaramMun'}`).textContent,
+            document.getElementById(`resultado${tipo === 'unidades' ? 'FaltamUnidades' : 'NaoInformaramMun'}`).textContent,
+            document.getElementById(`resultado${tipo === 'unidades' ? 'DuplicadasUnidades' : 'DuplicadosMun'}`).textContent
+        ].filter(Boolean).join('\n\n---\n\n');
+        
+        navigator.clipboard.writeText(results).then(() => {
+            showToast('Resultados copiados para a área de transferência!');
+        }).catch(err => {
+            console.error('Erro ao copiar: ', err);
+            showToast('Falha ao copiar resultados.');
+        });
+    }
+
+    function baixarExport(tipo) {
+        const chkTxt = document.getElementById(`chkTxt${tipo === 'unidades' ? 'Un' : 'Mun'}`)?.checked;
+        const chkDoc = document.getElementById(`chkDoc${tipo === 'unidades' ? 'Un' : 'Mun'}`)?.checked;
+        const chkPdf = document.getElementById(`chkPdf${tipo === 'unidades' ? 'Un' : 'Mun'}`)?.checked;
+        const chkCsv = document.getElementById(`chkCsv${tipo === 'unidades' ? 'Un' : 'Mun'}`)?.checked;
+
+        const resultados = {
+            montadas: document.getElementById(`resultado${tipo === 'unidades' ? 'MontadasUnidades' : 'InformaramMun'}`).textContent,
+            faltam: document.getElementById(`resultado${tipo === 'unidades' ? 'FaltamUnidades' : 'NaoInformaramMun'}`).textContent,
+            duplicadas: document.getElementById(`resultado${tipo === 'unidades' ? 'DuplicadasUnidades' : 'DuplicadosMun'}`).textContent
+        };
+
+        const nomeBase = `${tipo === 'unidades' ? 'Unidades' : 'Municipios'}_Relatorio`;
+
+        if (chkTxt) {
+            const content = `✅ Montadas:\n${resultados.montadas}\n\n❌ Faltam:\n${resultados.faltam}\n\n⚠️ Duplicadas:\n${resultados.duplicadas}`;
+            downloadFile(content, `${nomeBase}.txt`, 'text/plain');
+        }
+        
+        if (chkDoc) {
+            const htmlContent = `
+                <h1>Relatório ${tipo === 'unidades' ? 'Unidades' : 'Municípios'}</h1>
+                <h2>✅ Montadas</h2>
+                <pre>${resultados.montadas}</pre>
+                <h2>❌ Faltam</h2>
+                <pre>${resultados.faltam}</pre>
+                <h2>⚠️ Duplicadas</h2>
+                <pre>${resultados.duplicadas}</pre>
+            `;
+            const blob = new Blob([htmlContent], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${nomeBase}.doc`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        if (chkCsv && tipo === 'unidades') {
+            const csvContent = "Status,Nome\n" +
+                "Montadas," + resultados.montadas.replace(/\n/g, '\nMontadas,') + "\n" +
+                "Faltam," + resultados.faltam.replace(/\n/g, '\nFaltam,') + "\n" +
+                "Duplicadas," + resultados.duplicadas.replace(/\n/g, '\nDuplicadas,');
+            downloadFile(csvContent, `${nomeBase}.csv`, 'text/csv;charset=utf-8;');
+        }
+        
+        if (chkPdf) {
+            const printContent = `
+                <style>
+                    body { font-family: sans-serif; margin: 20px; }
+                    h1, h2 { color: #333; }
+                    pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; white-space: pre-wrap; word-wrap: break-word; }
+                </style>
+                <h1>Relatório ${tipo === 'unidades' ? 'Unidades' : 'Municípios'}</h1>
+                <h2>✅ Montadas</h2>
+                <pre>${resultados.montadas}</pre>
+                <h2>❌ Faltam</h2>
+                <pre>${resultados.faltam}</pre>
+                <h2>⚠️ Duplicadas</h2>
+                <pre>${resultados.duplicadas}</pre>
+            `;
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write(printContent);
+            newWindow.document.close();
+            newWindow.print();
+        }
+        showToast('Download(s) iniciado(s)!');
+    }
+
+    function downloadFile(content, filename, contentType) {
+        const a = document.createElement('a');
+        const file = new Blob([content], {type: contentType});
+        a.href = URL.createObjectURL(file);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    }
+
+
+    /* ===================== INICIALIZAÇÃO ===================== */
+    window.onload = function() {
+        loadUnidadesFromLocalStorage();
+        inicializarTabela('Unidades', unidadesBase);
+        inicializarTabela('Municipios', municipiosAmazonas);
+        
+        atualizarUI('unidades', { montadas: [], faltam: unidadesBase.map(u => ({ original: u })), duplicadas: [], naoReconhecidas: [] });
+        atualizarUI('municipios', { montadas: [], faltam: municipiosAmazonas.map(m => ({ original: m })), duplicadas: [], naoReconhecidas: [] });
+
+        document.querySelectorAll('input[name="caseUn"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                processarUnidades();
+            });
+        });
+        document.querySelectorAll('input[name="caseMun"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                processarMunicipios();
+            });
+        });
+        
+        document.querySelectorAll('input[name="layoutUn"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                processarUnidades();
+            });
+        });
+        document.querySelectorAll('input[name="layoutMun"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                processarMunicipios();
+            });
+        });
+    };
+</script>
+</body>
+</html>
