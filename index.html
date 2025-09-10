@@ -167,10 +167,11 @@
         <table id="tabelaUnidades">
             <thead>
                 <tr>
-                    <th style="width:40%">Unidades Base</th>
-                    <th style="width:20%">Status</th>
+                    <th style="width:30%">Unidades Base</th>
+                    <th style="width:15%">Status</th>
                     <th style="width:20%">Faltam Montar</th>
-                    <th style="width:20%">Duplicadas</th>
+                    <th style="width:15%">Duplicadas</th>
+                    <th style="width:20%">Ações</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -330,7 +331,7 @@
 
             <div style="margin-top:16px">
                 <strong class="small">Entradas não reconhecidas:</strong>
-                <div id="municipiosNaoReconhecidos" class="resultado-texto" style="height:80px"></div>
+                <div id="municipiosNaoReconhecidas" class="resultado-texto" style="height:80px"></div>
             </div>
         </div>
     </div>
@@ -530,7 +531,13 @@
         listaBase.forEach(item=>{
             const tr = document.createElement('tr');
             if(tipo === 'Unidades'){
-                tr.innerHTML = `<td><strong>${item}</strong></td><td></td><td></td><td></td>`;
+                tr.innerHTML = `
+                    <td><strong>${item}</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td><button class="danger" style="padding: 6px 10px; font-size: 12px;" onclick="removerUnidade('${item.replace(/'/g, "\\'")}')">Remover</button></td>
+                `;
             } else {
                 tr.innerHTML = `<td><strong>${item}</strong></td><td></td><td></td>`;
             }
@@ -598,6 +605,7 @@
                     <td>${status}</td>
                     <td>${faltamCount > 0 ? 'Falta' : ''}</td>
                     <td>${duplicadasCount > 0 ? `Duplicada (${duplicadasCount})` : ''}</td>
+                    <td><button class="danger" style="padding: 6px 10px; font-size: 12px;" onclick="removerUnidade('${item.replace(/'/g, "\\'")}')">Remover</button></td>
                 `;
             } else {
                 const faltamCount = resultados.faltam.filter(f => safeNormalize(f.original) === normalizedItem).length;
@@ -616,7 +624,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${item.original}</td>
-                    <td colspan="${tipo === 'Unidades' ? 3 : 2}" style="color:var(--danger)">⚠️ Não reconhecido</td>
+                    <td colspan="${tipo === 'Unidades' ? 4 : 2}" style="color:var(--danger)">⚠️ Não reconhecido</td>
                 `;
                 tabelaBody.appendChild(tr);
             });
@@ -630,6 +638,7 @@
         
         if (entrada.length === 0) {
             showToast('Nenhuma unidade para processar.');
+            atualizarUI('unidades', { montadas: [], faltam: unidadesBase.map(u => ({ original: u })), duplicadas: [], naoReconhecidas: [] });
             return;
         }
 
@@ -674,6 +683,7 @@
         
         if (entrada.length === 0) {
             showToast('Nenhum município para processar.');
+            atualizarUI('municipios', { montadas: [], faltam: municipiosAmazonas.map(m => ({ original: m })), duplicadas: [], naoReconhecidas: [] });
             return;
         }
 
@@ -772,6 +782,21 @@
         inicializarTabela('Unidades', unidadesBase);
         showToast(`"${toTitleCase(nome)}" adicionada!`);
         atualizarUI('unidades', { montadas: [], faltam: unidadesBase.map(u => ({ original: u })), duplicadas: [], naoReconhecidas: [] });
+    }
+
+    function removerUnidade(nomeUnidade) {
+        const confirmed = confirm(`Tem certeza que deseja remover a unidade "${nomeUnidade}"?`);
+        if (!confirmed) {
+            return;
+        }
+        const index = unidadesBase.findIndex(u => u === nomeUnidade);
+        if (index > -1) {
+            unidadesBase.splice(index, 1);
+            saveUnidadesToLocalStorage();
+            inicializarTabela('Unidades', unidadesBase);
+            showToast(`"${nomeUnidade}" removida com sucesso!`);
+            processarUnidades(); 
+        }
     }
 
     function ordenarAlfabeticamente(tipo) {
